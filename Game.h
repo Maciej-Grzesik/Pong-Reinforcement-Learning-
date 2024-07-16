@@ -17,18 +17,24 @@ private:
     sf::Event event;
     sf::VideoMode videoMode;
 
-    Ball ball;
-    Player playerLeft;
-    Player playerRight;
+    sf::RectangleShape gameTile;
+
+    Ball* pBall;
+    Player* pPlayerLeft;
+    Player* pPlayerRight;
 
     void initVariables();
     void initWindow();
     void initBall();
     void initPlayers();
+    void initTiles();
 
 public:
     Game();
     virtual ~Game();
+
+    int scoreLeft{0};
+    int scoreRight{0};
 
     bool isWindowOpen() const;
 
@@ -40,7 +46,7 @@ public:
     void render();
     void renderBall();
     void renderPlayers();
+    void renderTiles();
 };
-
 
 #endif //ENGINE_GAME_H

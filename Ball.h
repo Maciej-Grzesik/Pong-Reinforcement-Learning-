@@ -7,18 +7,29 @@
 
 
 #include "SFML/Graphics/CircleShape.hpp"
+#include "Player.h"
 
 class Ball : public sf::CircleShape {
 private:
-    float xDirection{1.f};
-    float yDirection{1.f};
+    float xDirection;
+    float yDirection{};
+    float velocity;
+
 
 public:
+    float angle{};
+    float xVelocity{};
+    float yVelocity{};
+    Ball(float xDirection, float velocity);
+
     float getxDirection() const;
     float getyDirection() const;
     void setxDirection(float xDirection);
     void setyDirection(float yDirection);
 
+    void calculatexVelocity();
+    void calculateyVelocity();
+    void calculateAngle(const Player& player);
 };
 
 

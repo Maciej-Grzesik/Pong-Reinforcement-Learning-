@@ -5,11 +5,10 @@
 #include <iostream>
 #include "Game.h"
 
-Game::Game()
-    : playerLeft(static_cast<float>(sf::VideoMode::getDesktopMode().height) / 2.f, 100.f),
-      playerRight(static_cast<float>(sf::VideoMode::getDesktopMode().height) / 2.f, static_cast<float>(sf::VideoMode::getDesktopMode().width) - 110.f) {
+Game::Game() {
     this->initVariables();
     this->initWindow();
+    this->initTiles();
     this->initBall();
     this->initPlayers();
 }
@@ -27,6 +26,7 @@ void Game::update() {
 void Game::render() {
     this->pWindow->clear();
 
+    this->renderTiles();
     this->renderBall();
     this->renderPlayers();
 
@@ -48,88 +48,126 @@ void Game::getEvent() {
         }
     }
     if (sf::Keyboard::isKeyPressed(sf::Keyboard::W)) {
-        this->playerLeft.setY(playerLeft.getY() - 10.f);
+        this->pPlayerLeft->moveUp(this->gameTile);
     }
 
     if (sf::Keyboard::isKeyPressed(sf::Keyboard::S)) {
-        this->playerLeft.setY(playerLeft.getY() + 10.f);
+        this->pPlayerLeft->moveDown(this->gameTile);
     }
 
     if (sf::Keyboard::isKeyPressed(sf::Keyboard::Up)) {
-        this->playerRight.setY(playerRight.getY() - 10.f);
+        this->pPlayerRight->moveUp(this->gameTile);
     }
 
     if (sf::Keyboard::isKeyPressed(sf::Keyboard::Down)) {
-        this->playerRight.setY(playerRight.getY() + 10.f);
+        this->pPlayerRight->moveDown(this->gameTile);
     }
 }
 
 void Game::initVariables() {
+    this->pPlayerLeft = nullptr;
+    this->pPlayerRight = nullptr;
+    this->pBall = nullptr;
     this->pWindow = nullptr;
 }
 
 void Game::initWindow() {
     this->videoMode = sf::VideoMode::getFullscreenModes()[0];
-    this->pWindow = new sf::RenderWindow(this->videoMode, "Engine", sf::Style::Titlebar);
+    this->pWindow = new sf::RenderWindow(this->videoMode, "Engine", sf::Style::Default);
     this->pWindow->setFramerateLimit(60);
+}
+
+void Game::initBall() {
+    this->pBall = new Ball(1.f, 10.f);
+    this->pBall->setRadius(10.0f);
+    this->pBall->setFillColor(sf::Color::White);
+    this->pBall->setPosition(sf::Vector2(static_cast<float>(sf::VideoMode::getDesktopMode().width) / 2.0f, static_cast<float>(sf::VideoMode::getDesktopMode().height) / 2.0f));
+}
+
+void Game::initPlayers() {
+    this->pPlayerLeft = new Player((this->gameTile.getPosition().y + this->gameTile.getSize().y) / 2.f, this->gameTile.getPosition().x + 50.f);
+    this->pPlayerLeft->setSize(sf::Vector2f(10.f, 100.f));
+    this->pPlayerLeft->setPosition(sf::Vector2f(this->pPlayerLeft->getX(), this->pPlayerLeft->getY()));
+
+    this->pPlayerRight = new Player((this->gameTile.getPosition().y + this->gameTile.getSize().y) / 2.f, this->gameTile.getPosition().x + this->gameTile.getSize().x- 50.f);
+    this->pPlayerRight->setSize(sf::Vector2f(10.f, 100.f));
+    this->pPlayerRight->setPosition(sf::Vector2f(this->pPlayerRight->getX(), this->pPlayerRight->getY()));
+}
+
+void Game::initTiles() {
+    this->gameTile.setSize(sf::Vector2f(this->pWindow->getSize().x * 3 / 4, this->pWindow->getSize().y * 3 / 4));
+    this->gameTile.setPosition(sf::Vector2f(this->pWindow->getSize().x / 8, this->pWindow->getSize().y / 16));
+    this->gameTile.setFillColor(sf::Color::Black);
+    this->gameTile.setOutlineColor(sf::Color::White);
+    this->gameTile.setOutlineThickness(2.f);
+
+}
+
+void Game::renderTiles() {
+    this->pWindow->draw(gameTile);
+
 }
 
 bool Game::isWindowOpen() const {
     return this->pWindow->isOpen();
 }
 
-void Game::initBall() {
-    this->ball.setRadius(10.0f);
-    this->ball.setFillColor(sf::Color::White);
-    this->ball.setPosition(sf::Vector2(static_cast<float>(sf::VideoMode::getDesktopMode().width) / 2.0f, static_cast<float>(sf::VideoMode::getDesktopMode().height) / 2.0f));
-}
-
 void Game::updateBall() {
-    sf::Vector2f position = this->ball.getPosition();
+    sf::Vector2f position = this->pBall->getPosition();
 
-    if (position.x <= this->playerLeft.getX() + this->ball.getRadius() - 10.f and this->ball.getxDirection() < 0) {
-
+    if (position.x >= this->pPlayerRight->getPosition().x - 2 * this->pBall->getRadius()
+        and position.x <= this->pPlayerRight->getPosition().x + this->pPlayerRight->getSize().x - 2 * this->pBall->getRadius()
+        and position.y >= pPlayerRight->getPosition().y
+        and position.y <= pPlayerRight->getPosition().y + 100.f) {
+        this->pBall->setxDirection(-1.f);
+        this->pBall->calculateAngle(*this->pPlayerRight);
     }
 
-    if (position.x >= this->playerRight.getX() - this->ball.getRadius() + 10.f and position.y >= playerRight.getY() and position.y <= playerRight.getY() + 100.f) {
-        this->ball.setxDirection(-1.f);
+    if (position.x <= this->pPlayerLeft->getPosition().x + this->pBall->getRadius()
+        and position.x >= this->pPlayerLeft->getPosition().x
+        and position.y >= pPlayerLeft->getPosition().y
+        and position.y <= pPlayerLeft->getPosition().y + 100.f) {
+        this->pBall->setxDirection(1.f);
+        this->pBall->calculateAngle(*this->pPlayerLeft);
     }
 
-    if (position.x <= this->playerLeft.getX() + this->ball.getRadius() - 10.f and position.y >= playerLeft.getY() and position.y <= playerLeft.getY() + 100.f) {
-        this->ball.setxDirection(1.f);
+    if (position.y <= this->gameTile.getPosition().y and this->pBall->yVelocity < 0) {
+        this->pBall->angle *= (-1.f);
+    }
+    if (position.y >= this->gameTile.getPosition().y + this->gameTile.getSize().y - 2 * this->pBall->getRadius() and this->pBall->yVelocity > 0) {
+        this->pBall->angle *= (-1.f);
     }
 
-    if (position.y <= 0 and this->ball.getyDirection() < 0) {
-        this->ball.setyDirection(1.f);
+    this->pBall->calculateyVelocity();
+    this->pBall->calculatexVelocity();
+    position.x += this->pBall->xVelocity;
+    position.y += this->pBall->yVelocity;
+
+    this->pBall->setPosition(position);
+
+
+
+    if (position.x <= this->gameTile.getPosition().x) {
+        scoreRight++;
+        this->pBall->setPosition(sf::Vector2(20.f, 100.f));
     }
-    if (position.y >= static_cast<float>(sf::VideoMode::getDesktopMode().height) - 2 * this->ball.getRadius() and this->ball.getyDirection() > 0) {
-        this->ball.setyDirection(-1.f);
+
+    if (position.x >= this->gameTile.getPosition().x + this->gameTile.getSize().x - 2 * this->pBall->getRadius()) {
+        scoreLeft++;
+        this->pBall->setPosition(sf::Vector2(20.f, 100.f));
     }
-
-
-    position.x += 8.f * this->ball.getxDirection();
-    position.y += 8.f * this->ball.getyDirection();
-
-    this->ball.setPosition(position);
 }
 
 void Game::renderBall() {
-    this->pWindow->draw(this->ball);
-}
-
-void Game::initPlayers() {
-    this->playerLeft.setSize(sf::Vector2f(10.f, 100.f));
-    this->playerLeft.setPosition(sf::Vector2f(this->playerLeft.getX(), this->playerLeft.getY()));
-    this->playerRight.setSize(sf::Vector2f(10.f, 100.f));
-    this->playerRight.setPosition(sf::Vector2f(this->playerRight.getX(), this->playerRight.getY()));
-}
-
-void Game::renderPlayers() {
-    this->pWindow->draw(this->playerLeft);
-    this->pWindow->draw(this->playerRight);
+    this->pWindow->draw(*this->pBall);
 }
 
 void Game::updatePlayers() {
-    this->playerLeft.setPosition(sf::Vector2f(this->playerLeft.getX(), this->playerLeft.getY()));
-    this->playerRight.setPosition(sf::Vector2f(this->playerRight.getX(), this->playerRight.getY()));
+    this->pPlayerLeft->updatePosition();
+    this->pPlayerRight->updatePosition();
+}
+
+void Game::renderPlayers() {
+    this->pWindow->draw(*this->pPlayerLeft);
+    this->pWindow->draw(*this->pPlayerRight);
 }

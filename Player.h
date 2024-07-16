@@ -16,8 +16,12 @@ public:
     Player(float yPosition, float xPosition);
     float getX() const;
     float getY() const;
-    void setX(float x);
     void setY(float y);
+    void updatePosition();
+
+    void moveUp(const sf::RectangleShape& tile);
+    void moveDown(const sf::RectangleShape& tile);
+
 };
 
 
